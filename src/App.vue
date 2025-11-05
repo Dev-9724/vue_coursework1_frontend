@@ -6,40 +6,34 @@
         <button class="btn" @click="page = 'lessons'">Lessons</button>
         <button class="btn" @click="page = 'checkout'">
           Checkout
-          <span v-if="cart.length" class="badge">{{ cart.length }}</span>
+          <span v-if="state.cart.length" class="badge">{{
+            state.cart.length
+          }}</span>
         </button>
       </nav>
     </header>
 
     <section v-if="page === 'lessons'">
-      <LessonsPage @add="addToCart" />
+      <LessonsPage />
     </section>
 
     <CheckoutPage
       v-else
-      :items="cart"
-      :total="total"
+      :items="state.cart"
+      :total="cartTotal"
       @remove="removeFromCart"
     />
   </main>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import LessonsPage from "./pages/LessonsPage.vue";
 import CheckoutPage from "./pages/CheckoutPage.vue";
+import { useStore } from "./composables/useStore";
 
 const page = ref("lessons");
-const cart = ref([]);
-
-function addToCart(lesson) {
-  cart.value.push(lesson);
-}
-function removeFromCart(id) {
-  const idx = cart.value.findIndex((i) => i._id === id);
-  if (idx !== -1) cart.value.splice(idx, 1);
-}
-const total = computed(() => cart.value.reduce((s, i) => s + i.price, 0));
+const { state, cartTotal, removeFromCart } = useStore();
 </script>
 
 <style>

@@ -1,52 +1,134 @@
 <template>
   <article class="card">
-    <img :src="lesson.image" :alt="lesson.subject" />
-    <div class="content">
-      <h3>{{ lesson.subject }}</h3>
-      <p><strong>Location:</strong> {{ lesson.location }}</p>
-      <p><strong>Price:</strong> £{{ lesson.price.toFixed(2) }}</p>
-      <p><strong>Spaces:</strong> {{ lesson.spaces }}</p>
-      <button
-        class="add"
-        @click="$emit('add', lesson)"
-        :disabled="lesson.spaces <= 0"
-      >
-        Add to cart
-      </button>
+    <img class="card-img" :src="lesson.image" :alt="lesson.subject" />
+    <div class="card-body">
+      <div class="row">
+        <h3 class="title">{{ lesson.subject }}</h3>
+        <span class="incart">In cart: {{ inCart }}</span>
+      </div>
+
+      <p class="location">{{ lesson.location }}</p>
+      <p class="price">£{{ lesson.price.toFixed(2) }}</p>
+
+      <div class="stars" aria-label="rating">
+        <span
+          v-for="n in 5"
+          :key="n"
+          class="star"
+          :class="{ on: n <= (lesson.rating ?? 0) }"
+          >★</span
+        >
+      </div>
+
+      <p class="cta">Buy now!</p>
+
+      <div class="actions">
+        <button
+          class="btn"
+          :disabled="lesson.spaces <= 0"
+          @click="$emit('add', lesson)"
+        >
+          Add to cart
+        </button>
+      </div>
     </div>
   </article>
 </template>
 
 <script setup>
-defineProps({ lesson: Object });
-defineEmits(["add"]);
+import { computed } from "vue";
+import { useStore } from "../composables/useStore.js";
+
+const props = defineProps({
+  lesson: {
+    type: Object,
+    required: true,
+  },
+});
+
+const store = useStore();
+const inCart = computed(() => store.qtyInCart(props.lesson._id));
 </script>
 
 <style scoped>
 .card {
-  display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 12px;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
-img {
-  width: 160px;
-  height: 110px;
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+.card-img {
+  width: 100%;
+  aspect-ratio: 16/9;
   object-fit: cover;
-  border-radius: 8px;
 }
-.add {
-  margin-top: 8px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid #999;
-  background: #f3f3f3;
+.card-body {
+  padding: 14px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.title {
+  margin: 0 0 2px;
+  font-size: 20px;
+  font-weight: 800;
+}
+.location {
+  margin: 0;
+  color: var(--muted);
+}
+.price {
+  margin: 10px 0 4px;
+  font-weight: 800;
+}
+.stars {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+.star {
+  font-size: 18px;
+  color: #d1d5db;
+}
+.star.on {
+  color: #f59e0b;
+}
+.cta {
+  margin: 0 0 10px;
+  color: var(--muted);
+}
+.incart {
+  color: var(--muted);
+  font-size: 14px;
+}
+.actions {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+}
+.btn {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
   cursor: pointer;
 }
-.add:disabled {
-  opacity: 0.5;
+.btn:hover {
+  background: #f5f7fb;
+}
+.btn:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
 }
 </style>

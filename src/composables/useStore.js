@@ -7,8 +7,9 @@ const state = reactive({
         { _id: '3', subject: 'Coding Club', location: 'Colindale', price: 18.0, spaces: 4, rating: 5, image: 'https://picsum.photos/id/1005/800/500' },
     ],
     cart: [],
-    sortKey: 'subject',
-    sortDir: 'asc'
+    // 🔧 default to Price / Ascending to match the UI
+    sortKey: 'price',
+    sortDir: 'asc',
 })
 
 const sortedLessons = computed(() => {
@@ -40,6 +41,10 @@ export function useStore() {
         const idx = state.cart.findIndex(i => i._id === id)
         if (idx !== -1) state.cart.splice(idx, 1)
     }
+    // 🔧 helper used by LessonCard to show "In cart: N"
+    function qtyInCart(id) {
+        return state.cart.filter(i => i._id === id).length
+    }
 
     return {
         state,
@@ -47,6 +52,7 @@ export function useStore() {
         cartTotal,
         setSort,
         addToCart,
-        removeFromCart
+        removeFromCart,
+        qtyInCart, // ← export this
     }
 }

@@ -5,15 +5,14 @@
       <h1>After-School Classes</h1>
 
       <div class="head-actions">
-        <div class="sort-cluster">
-          <SortBar
-            :sortKey="state.sortKey"
-            :sortDir="state.sortDir"
-            @update:sort="setSort"
-          />
-        </div>
+        <SortBar
+          :sortKey="state.sortKey"
+          :sortDir="state.sortDir"
+          @update:sort="setSort"
+        />
 
-        <button class="icon" aria-label="Cart">
+        <!-- cart button with badge -->
+        <button class="icon" @click="$emit('checkout')" aria-label="Cart">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path
               d="M7 4H5L3 7h2l3.5 7H18a2 2 0 0 0 1.8-1.1L23 7H7"
@@ -25,7 +24,7 @@
           }}</span>
         </button>
 
-        <button class="primary">Checkout</button>
+        <button class="primary" @click="$emit('checkout')">Checkout</button>
       </div>
     </header>
 
@@ -45,7 +44,7 @@
 import LessonCard from "../components/LessonCard.vue";
 import SortBar from "../components/SortBar.vue";
 import { useStore } from "../composables/useStore";
-
+const emit = defineEmits(["checkout"]);
 const { state, sortedLessons, setSort, addToCart } = useStore();
 </script>
 
@@ -55,43 +54,29 @@ const { state, sortedLessons, setSort, addToCart } = useStore();
   max-width: 1150px;
   margin: 0 auto;
 }
-
 .page-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   flex-wrap: wrap;
-  gap: 1rem;
   margin-bottom: 1rem;
 }
-
 .page-head h1 {
   margin: 0;
   font-size: 44px;
   line-height: 1.05;
   font-weight: 800;
 }
-
 .head-actions {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
-
-.sort-cluster {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.label {
-  font-weight: 600;
-}
-
 .icon {
   position: relative;
-  border: 1px solid var(--border);
+  border: 1px solid #e5e7eb;
   background: #fff;
   padding: 8px 10px;
   border-radius: 12px;
@@ -112,7 +97,7 @@ const { state, sortedLessons, setSort, addToCart } = useStore();
 }
 .primary {
   border: none;
-  background: var(--primary, #4f46e5);
+  background: #4f46e5;
   color: #fff;
   padding: 10px 14px;
   border-radius: 12px;
@@ -122,11 +107,14 @@ const { state, sortedLessons, setSort, addToCart } = useStore();
 .primary:hover {
   filter: brightness(0.95);
 }
-
-/* lessons grid */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 24px;
+}
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
 }
 </style>

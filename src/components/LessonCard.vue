@@ -4,33 +4,41 @@
     <div class="card-body">
       <div class="row">
         <h3 class="title">{{ lesson.subject }}</h3>
-        <span class="incart">In cart: {{ inCart }}</span>
+        <span class="spaces">Spaces: {{ lesson.spaces }}</span>
       </div>
 
       <p class="location">{{ lesson.location }}</p>
       <p class="price">£{{ lesson.price.toFixed(2) }}</p>
 
-      <div class="stars" aria-label="rating">
+      <div class="stars">
         <span
           v-for="n in 5"
           :key="n"
           class="star"
-          :class="{ on: n <= (lesson.rating ?? 0) }"
+          :class="{ on: n <= lesson.rating }"
           >★</span
         >
       </div>
 
-      <p class="cta">Buy now!</p>
+      <!-- Live stock update -->
+      <p
+        class="stock"
+        :class="{ low: lesson.spaces <= 2, out: lesson.spaces <= 0 }"
+      >
+        <span v-if="lesson.spaces > 0">
+          {{ lesson.spaces }}
+          {{ lesson.spaces === 1 ? "space" : "spaces" }} available
+        </span>
+        <span v-else>Fully booked</span>
+      </p>
 
-      <div class="actions">
-        <button
-          class="btn"
-          :disabled="lesson.spaces <= 0"
-          @click="$emit('add', lesson)"
-        >
-          Add to cart
-        </button>
-      </div>
+      <button
+        class="btn"
+        @click="$emit('add', lesson)"
+        :disabled="lesson.spaces <= 0"
+      >
+        {{ lesson.spaces <= 0 ? "Full" : "Buy now!" }}
+      </button>
     </div>
   </article>
 </template>
@@ -130,5 +138,16 @@ const inCart = computed(() => store.qtyInCart(props.lesson._id));
 .btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+.stock {
+  margin: 6px 0 12px;
+  color: #10b981;
+  font-weight: 600;
+}
+.stock.low {
+  color: #f59e0b;
+}
+.stock.out {
+  color: #ef4444;
 }
 </style>

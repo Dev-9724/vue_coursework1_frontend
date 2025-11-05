@@ -2,14 +2,13 @@ import { reactive, computed } from 'vue'
 
 const state = reactive({
     lessons: [
-        { _id: '1', subject: 'Art & Crafts', location: 'Golders Green', price: 10.0, spaces: 9, rating: 3, image: 'https://picsum.photos/id/1015/800/500' },
-        { _id: '2', subject: 'Maths — Young Learners', location: 'Hendon', price: 12.5, spaces: 7, rating: 4, image: 'https://picsum.photos/id/102/800/500' },
-        { _id: '3', subject: 'Coding Club', location: 'Colindale', price: 18.0, spaces: 4, rating: 5, image: 'https://picsum.photos/id/1005/800/500' },
+        { _id: '1', subject: 'Art & Crafts', location: 'Golders Green', price: 10.0, spaces: 5, rating: 3, image: 'https://picsum.photos/id/1015/800/500' },
+        { _id: '2', subject: 'Maths — Young Learners', location: 'Hendon', price: 12.5, spaces: 5, rating: 4, image: 'https://picsum.photos/id/102/800/500' },
+        { _id: '3', subject: 'Coding Club', location: 'Colindale', price: 18.0, spaces: 5, rating: 5, image: 'https://picsum.photos/id/1005/800/500' },
     ],
     cart: [],
-    // 🔧 default to Price / Ascending to match the UI
     sortKey: 'price',
-    sortDir: 'asc',
+    sortDir: 'asc'
 })
 
 const sortedLessons = computed(() => {
@@ -34,17 +33,23 @@ export function useStore() {
         state.sortKey = sortKey
         state.sortDir = sortDir
     }
+
     function addToCart(lesson) {
-        state.cart.push(lesson)
+        if (lesson.spaces > 0) {
+            lesson.spaces -= 1      
+            state.cart.push({ ...lesson })
+        }
     }
+
     function removeFromCart(id) {
         const idx = state.cart.findIndex(i => i._id === id)
-        if (idx !== -1) state.cart.splice(idx, 1)
+        if (idx !== -1) {
+            const lesson = state.lessons.find(l => l._id === id)
+            if (lesson) lesson.spaces += 1  
+            state.cart.splice(idx, 1)
+        }
     }
-    // 🔧 helper used by LessonCard to show "In cart: N"
-    function qtyInCart(id) {
-        return state.cart.filter(i => i._id === id).length
-    }
+
 
     return {
         state,
@@ -52,7 +57,6 @@ export function useStore() {
         cartTotal,
         setSort,
         addToCart,
-        removeFromCart,
-        qtyInCart, // ← export this
+        removeFromCart
     }
 }

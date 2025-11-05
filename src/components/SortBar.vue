@@ -1,60 +1,63 @@
 <template>
   <div class="sortbar">
-    <label>
-      Sort by:
-      <select v-model="local.sortKey">
-        <option value="subject">Subject</option>
-        <option value="location">Location</option>
-        <option value="price">Price</option>
-        <option value="rating">Rating</option>
-        <option value="spaces">Spaces</option>
-      </select>
-    </label>
+    <span class="label">Sort by:</span>
 
-    <label>
-      Order:
-      <select v-model="local.sortDir">
-        <option value="asc">Ascending</option>
-        <option value="desc">Descending</option>
-      </select>
-    </label>
+    <select v-model="local.localKey">
+      <option value="subject">Subject</option>
+      <option value="location">Location</option>
+      <option value="price">Price</option>
+      <option value="rating">Rating</option>
+      <option value="spaces">Spaces</option>
+    </select>
 
-    <button class="btn" @click="apply">Apply</button>
+    <select v-model="local.localDir">
+      <option value="asc">Ascending</option>
+      <option value="desc">Descending</option>
+    </select>
   </div>
 </template>
 
 <script setup>
-import { reactive } from "vue";
+import { reactive, watch } from "vue";
 
 const emit = defineEmits(["update:sort"]);
 const props = defineProps({
-  sortKey: { type: String, default: "subject" },
+  sortKey: { type: String, default: "price" },
   sortDir: { type: String, default: "asc" },
 });
 
-const local = reactive({ sortKey: props.sortKey, sortDir: props.sortDir });
-function apply() {
-  emit("update:sort", { sortKey: local.sortKey, sortDir: local.sortDir });
-}
+const local = reactive({
+  localKey: props.sortKey,
+  localDir: props.sortDir,
+});
+
+watch(
+  local,
+  () => {
+    emit("update:sort", { sortKey: local.localKey, sortDir: local.localDir });
+  },
+  { deep: true }
+);
 </script>
 
 <style scoped>
 .sortbar {
   display: flex;
-  gap: 12px;
   align-items: center;
-  margin: 12px 0;
+  gap: 12px;
+  flex-wrap: wrap;
 }
-.btn {
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  background: transparent;
-  cursor: pointer;
+.label {
+  font-weight: 600;
 }
 select {
-  padding: 6px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fff;
+}
+select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px #c7d2fe;
 }
 </style>

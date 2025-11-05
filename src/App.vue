@@ -9,6 +9,7 @@
       :items="state.cart"
       :total="cartTotal"
       @remove="removeFromCart"
+      @back="page = 'lessons'"
     />
   </main>
 </template>

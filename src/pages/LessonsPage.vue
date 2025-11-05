@@ -1,17 +1,20 @@
 <template>
   <section>
     <h2>Lessons</h2>
+    <SortBar :sortKey="sortKey" :sortDir="sortDir" @update:sort="onSort" />
     <div class="grid">
-      <LessonCard v-for="ls in lessons" :key="ls._id" :lesson="ls" />
+      <!-- use 'sorted', not 'lessons' -->
+      <LessonCard v-for="ls in sorted" :key="ls._id" :lesson="ls" />
     </div>
   </section>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import LessonCard from "../components/LessonCard.vue";
+import SortBar from "../components/SortBar.vue";
 
-const lessons = ref([
+const data = ref([
   {
     _id: "1",
     subject: "Art & Crafts",
@@ -40,6 +43,29 @@ const lessons = ref([
     image: "https://picsum.photos/id/1005/800/500",
   },
 ]);
+
+const sortKey = ref("subject");
+const sortDir = ref("asc");
+
+const sorted = computed(() => {
+  const arr = [...data.value];
+  arr.sort((a, b) => {
+    const A = a[sortKey.value];
+    const B = b[sortKey.value];
+    if (typeof A === "number" && typeof B === "number") {
+      return sortDir.value === "asc" ? A - B : B - A;
+    }
+    return sortDir.value === "asc"
+      ? String(A).localeCompare(String(B))
+      : String(B).localeCompare(String(A));
+  });
+  return arr;
+});
+
+function onSort({ sortKey: k, sortDir: d }) {
+  sortKey.value = k;
+  sortDir.value = d;
+}
 </script>
 
 <style scoped>

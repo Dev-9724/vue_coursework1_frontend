@@ -6,17 +6,20 @@
       <p><strong>Location:</strong> {{ lesson.location }}</p>
       <p><strong>Price:</strong> £{{ lesson.price.toFixed(2) }}</p>
       <p><strong>Spaces:</strong> {{ lesson.spaces }}</p>
+      <button
+        class="add"
+        @click="$emit('add', lesson)"
+        :disabled="lesson.spaces <= 0"
+      >
+        Add to cart
+      </button>
     </div>
   </article>
 </template>
 
 <script setup>
-defineProps({
-  lesson: {
-    type: Object,
-    required: true,
-  },
-});
+defineProps({ lesson: Object });
+defineEmits(["add"]);
 </script>
 
 <style scoped>
@@ -34,7 +37,16 @@ img {
   object-fit: cover;
   border-radius: 8px;
 }
-h3 {
-  margin: 0 0 6px;
+.add {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #999;
+  background: #f3f3f3;
+  cursor: pointer;
+}
+.add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

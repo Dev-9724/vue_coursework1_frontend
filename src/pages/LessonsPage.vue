@@ -38,6 +38,7 @@
 
         <button class="primary" @click="$emit('checkout')">Checkout</button>
       </div>
+      
     </header>
 
     <!-- lessons grid -->

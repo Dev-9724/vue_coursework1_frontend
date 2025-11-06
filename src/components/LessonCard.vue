@@ -4,7 +4,6 @@
     <div class="card-body">
       <div class="row">
         <h3 class="title">{{ lesson.subject }}</h3>
-        <span class="spaces">Spaces: {{ lesson.spaces }}</span>
       </div>
 
       <p class="location">{{ lesson.location }}</p>

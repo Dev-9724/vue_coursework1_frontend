@@ -6,7 +6,7 @@
     </header>
 
     <div class="grid">
-      <!-- Cart Summary -->
+      <!-- CART SUMMARY -->
       <aside class="card">
         <h2 class="card-title">Your Cart</h2>
 
@@ -21,7 +21,6 @@
                 <span class="price">{{ asGBP(item.price) }}</span>
               </div>
             </div>
-
             <div class="qty">x1</div>
             <div class="row-total">{{ asGBP(item.price) }}</div>
 
@@ -47,31 +46,49 @@
         </div>
       </aside>
 
-      <!-- Details / Place Order -->
+      <!-- DETAILS / PLACE ORDER -->
       <article class="card">
         <h2 class="card-title">Your details</h2>
+
         <div class="form">
+          <!-- NAME -->
           <label>
             <span>Name</span>
             <input
               v-model.trim="name"
               type="text"
               placeholder="Your full name"
+              @input="validate"
             />
-          </label>
-          <label>
-            <span>Phone</span>
-            <input v-model.trim="phone" type="tel" placeholder="07..." />
+            <small v-if="name && !nameOk" class="hint">
+              Letters only (min 2).
+            </small>
           </label>
 
+          <!-- PHONE -->
+          <label>
+            <span>Phone</span>
+            <input
+              v-model.trim="phone"
+              type="tel"
+              placeholder="07..."
+              @input="validate"
+            />
+            <small v-if="phone && !phoneOk" class="hint">
+              Digits only (7–15 numbers).
+            </small>
+          </label>
+
+          <!-- BUTTON -->
           <button
             class="primary"
             :disabled="!isValid || !cartItems.length || loading"
             @click="placeOrder"
           >
-            {{ loading ? "Placing order…" : "Place order" }}
+            {{ loading ? "Placing order..." : "Place order" }}
           </button>
 
+          <!-- FEEDBACK -->
           <p v-if="error" class="error">{{ error }}</p>
           <p v-if="success" class="success">Order placed! Thank you 🎉</p>
         </div>
@@ -81,7 +98,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { ref, computed } from "vue";
 import { useStore } from "../composables/useStore";
 
 const store = useStore();
@@ -97,9 +114,18 @@ const subtotal = computed(() =>
 
 const name = ref("");
 const phone = ref("");
-const isValid = computed(
-  () => name.value.length >= 2 && phone.value.length >= 7
+
+// ✅ Regex-based validation
+const nameOk = computed(() =>
+  /^[A-Za-z][A-Za-z\s'-]{1,}$/.test(name.value.trim())
 );
+const phoneOk = computed(() => /^\d{7,15}$/.test(phone.value.trim()));
+const isValid = computed(() => nameOk.value && phoneOk.value);
+
+function validate() {
+  error.value = "";
+  success.value = false;
+}
 
 function asGBP(v) {
   return new Intl.NumberFormat("en-GB", {
@@ -116,8 +142,10 @@ async function placeOrder() {
   success.value = false;
 
   try {
+    // simulate success & restore stock
     const ids = cartItems.value.map((i) => i._id);
     ids.forEach((id) => store.removeFromCart(id));
+
     success.value = true;
     name.value = "";
     phone.value = "";
@@ -147,7 +175,6 @@ async function placeOrder() {
   font-size: 32px;
   font-weight: 800;
 }
-
 .ghost {
   border: 1px solid var(--border, #e5e7eb);
   background: #fff;
@@ -158,7 +185,6 @@ async function placeOrder() {
 .ghost:hover {
   background: #f5f7fb;
 }
-
 .grid {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
@@ -169,7 +195,6 @@ async function placeOrder() {
     grid-template-columns: 1fr;
   }
 }
-
 .card {
   background: #fff;
   border: 1px solid var(--border, #e5e7eb);
@@ -182,7 +207,6 @@ async function placeOrder() {
   font-size: 1.25rem;
   font-weight: 700;
 }
-
 .cart-list {
   list-style: none;
   padding: 0;
@@ -217,7 +241,6 @@ async function placeOrder() {
   font-weight: 700;
   text-align: right;
 }
-
 .link {
   background: none;
   border: none;
@@ -228,7 +251,6 @@ async function placeOrder() {
 .link.danger {
   color: #ef4444;
 }
-
 .totals {
   margin-top: 10px;
   display: grid;
@@ -243,7 +265,6 @@ async function placeOrder() {
   font-size: 1.15rem;
   font-weight: 800;
 }
-
 .form {
   display: grid;
   gap: 10px;
@@ -261,7 +282,7 @@ input {
 }
 button.primary {
   border: none;
-  background: var(--primary, #4f46e5);
+  background: var(--primary, #2563eb);
   color: #fff;
   padding: 10px 14px;
   border-radius: 12px;
@@ -275,7 +296,6 @@ button.primary:disabled {
 button.primary:hover {
   filter: brightness(0.95);
 }
-
 .muted {
   color: #6b7280;
 }
@@ -287,5 +307,9 @@ button.primary:hover {
   color: #16a34a;
   margin-top: 0.5rem;
   font-weight: 700;
+}
+.hint {
+  color: #ef4444;
+  font-size: 0.85rem;
 }
 </style>

@@ -24,10 +24,7 @@
         class="stock"
         :class="{ low: lesson.spaces <= 2, out: lesson.spaces <= 0 }"
       >
-        <span v-if="lesson.spaces > 0">
-          {{ lesson.spaces }}
-          {{ lesson.spaces === 1 ? "space" : "spaces" }} available
-        </span>
+        <span v-if="lesson.spaces > 0"> Spaces left: {{ lesson.spaces }} </span>
         <span v-else>Fully booked</span>
       </p>
 

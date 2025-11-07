@@ -10,27 +10,29 @@
       <aside class="card">
         <h2 class="card-title">Your Cart</h2>
 
-        <div v-if="!cartItems.length" class="muted">Your cart is empty.</div>
+        <div v-if="!groupedItems.length" class="muted">Your cart is empty.</div>
 
         <ul v-else class="cart-list">
-          <li v-for="item in cartItems" :key="item._id" class="cart-row">
+          <li v-for="g in groupedItems" :key="g._id" class="cart-row">
             <div class="info">
-              <div class="name">{{ item.subject }}</div>
+              <div class="name">{{ g.subject }}</div>
               <div class="meta">
-                {{ item.location }} ·
-                <span class="price">{{ asGBP(item.price) }}</span>
+                {{ g.location }} ·
+                <span class="price">{{ asGBP(g.price) }}</span>
               </div>
             </div>
-            <div class="qty">x1</div>
-            <div class="row-total">{{ asGBP(item.price) }}</div>
 
-            <button class="link danger" @click="store.removeFromCart(item._id)">
+            <div class="qty">x{{ g.qty }}</div>
+            <div class="row-total">{{ asGBP(g.total) }}</div>
+
+            <!-- remove ONE unit -->
+            <button class="link danger" @click="store.removeFromCart(g._id)">
               Remove
             </button>
           </li>
         </ul>
 
-        <div class="totals" v-if="cartItems.length">
+        <div class="totals" v-if="groupedItems.length">
           <div class="row">
             <span>Subtotal</span>
             <span>{{ asGBP(subtotal) }}</span>
@@ -51,7 +53,6 @@
         <h2 class="card-title">Your details</h2>
 
         <div class="form">
-          <!-- NAME -->
           <label>
             <span>Name</span>
             <input
@@ -65,7 +66,6 @@
             </small>
           </label>
 
-          <!-- PHONE -->
           <label>
             <span>Phone</span>
             <input
@@ -79,7 +79,6 @@
             </small>
           </label>
 
-          <!-- BUTTON -->
           <button
             class="primary"
             :disabled="!isValid || !cartItems.length || loading"
@@ -88,7 +87,6 @@
             {{ loading ? "Placing order..." : "Place order" }}
           </button>
 
-          <!-- FEEDBACK -->
           <p v-if="error" class="error">{{ error }}</p>
           <p v-if="success" class="success">Order placed! Thank you 🎉</p>
         </div>
@@ -107,7 +105,31 @@ const loading = ref(false);
 const error = ref("");
 const success = ref(false);
 
+// flat cart (each item is one unit)
 const cartItems = computed(() => store.state.cart || []);
+
+// GROUPED VIEW for the UI
+const groupedItems = computed(() => { 
+  const map = new Map();
+  for (const i of cartItems.value) {
+    if (!map.has(i._id)) {
+      map.set(i._id, {
+        _id: i._id,
+        subject: i.subject,
+        location: i.location,
+        price: Number(i.price) || 0,
+        qty: 0,
+      });
+    }
+    map.get(i._id).qty += 1;
+  }
+  return Array.from(map.values()).map((g) => ({
+    ...g,
+    total: g.qty * g.price,
+  }));
+});
+
+// totals from the flat cart (already correct)
 const subtotal = computed(() =>
   cartItems.value.reduce((sum, i) => sum + Number(i.price || 0), 0)
 );
@@ -115,7 +137,7 @@ const subtotal = computed(() =>
 const name = ref("");
 const phone = ref("");
 
-// ✅ Regex-based validation
+// validation
 const nameOk = computed(() =>
   /^[A-Za-z][A-Za-z\s'-]{1,}$/.test(name.value.trim())
 );
@@ -142,7 +164,7 @@ async function placeOrder() {
   success.value = false;
 
   try {
-    // simulate success & restore stock
+    // remove every item from flat cart (restores spaces for each)
     const ids = cartItems.value.map((i) => i._id);
     ids.forEach((id) => store.removeFromCart(id));
 
@@ -185,6 +207,7 @@ async function placeOrder() {
 .ghost:hover {
   background: #f5f7fb;
 }
+
 .grid {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
@@ -195,6 +218,7 @@ async function placeOrder() {
     grid-template-columns: 1fr;
   }
 }
+
 .card {
   background: #fff;
   border: 1px solid var(--border, #e5e7eb);
@@ -207,6 +231,7 @@ async function placeOrder() {
   font-size: 1.25rem;
   font-weight: 700;
 }
+
 .cart-list {
   list-style: none;
   padding: 0;
@@ -235,12 +260,13 @@ async function placeOrder() {
 }
 .qty {
   text-align: right;
-  width: 3ch;
+  width: 4ch;
 }
 .row-total {
   font-weight: 700;
   text-align: right;
 }
+
 .link {
   background: none;
   border: none;
@@ -251,6 +277,7 @@ async function placeOrder() {
 .link.danger {
   color: #ef4444;
 }
+
 .totals {
   margin-top: 10px;
   display: grid;
@@ -265,6 +292,7 @@ async function placeOrder() {
   font-size: 1.15rem;
   font-weight: 800;
 }
+
 .form {
   display: grid;
   gap: 10px;
@@ -296,6 +324,7 @@ button.primary:disabled {
 button.primary:hover {
   filter: brightness(0.95);
 }
+
 .muted {
   color: #6b7280;
 }

@@ -22,11 +22,43 @@
               </div>
             </div>
 
-            <div class="qty">x{{ g.qty }}</div>
+            <!-- qty controls -->
+            <div class="qty-cell">
+              <div class="qty-controls">
+                <button
+                  class="qty-btn"
+                  @click="decrement(g._id)"
+                  aria-label="Decrease quantity"
+                >
+                  −
+                </button>
+                <span class="qty-num">{{ g.qty }}</span>
+                <button
+                  class="qty-btn"
+                  :disabled="lessonById(g._id)?.spaces === 0"
+                  :title="
+                    lessonById(g._id)?.spaces === 0
+                      ? 'No more stock'
+                      : 'Increase quantity'
+                  "
+                  @click="increment(g._id)"
+                  aria-label="Increase quantity"
+                >
+                  +
+                </button>
+              </div>
+              <small
+                class="stock"
+                :class="{ out: lessonById(g._id)?.spaces === 0 }"
+              >
+                Spaces left: {{ lessonById(g._id)?.spaces ?? 0 }}
+              </small>
+            </div>
+
             <div class="row-total">{{ asGBP(g.total) }}</div>
 
-            <!-- remove ONE unit -->
-            <button class="link danger" @click="store.removeFromCart(g._id)">
+            <!-- remove ALL units of this line -->
+            <button class="link danger" @click="removeLine(g._id, g.qty)">
               Remove
             </button>
           </li>
@@ -108,8 +140,8 @@ const success = ref(false);
 // flat cart (each item is one unit)
 const cartItems = computed(() => store.state.cart || []);
 
-// GROUPED VIEW for the UI
-const groupedItems = computed(() => { 
+// GROUPED VIEW for the UI (id -> qty)
+const groupedItems = computed(() => {
   const map = new Map();
   for (const i of cartItems.value) {
     if (!map.has(i._id)) {
@@ -133,6 +165,23 @@ const groupedItems = computed(() => {
 const subtotal = computed(() =>
   cartItems.value.reduce((sum, i) => sum + Number(i.price || 0), 0)
 );
+
+// quick lesson lookup for remaining spaces (for + button disable and label)
+const lessonById = (id) => store.state.lessons.find((l) => l._id === id);
+
+// qty handlers using your existing store logic
+function increment(id) {
+  const lesson = lessonById(id);
+  if (lesson && lesson.spaces > 0) {
+    store.addToCart(lesson); // pushes one more unit & decreases spaces
+  }
+}
+function decrement(id) {
+  store.removeFromCart(id); // removes one unit & restores one space
+}
+function removeLine(id, qty) {
+  for (let i = 0; i < qty; i++) store.removeFromCart(id); // remove ALL and restore all spaces
+}
 
 const name = ref("");
 const phone = ref("");
@@ -258,10 +307,42 @@ async function placeOrder() {
 .price {
   font-weight: 600;
 }
-.qty {
-  text-align: right;
-  width: 4ch;
+
+.qty-cell {
+  text-align: center;
+  min-width: 160px;
 }
+.qty-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.qty-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  cursor: pointer;
+}
+.qty-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.qty-num {
+  min-width: 22px;
+  display: inline-block;
+  text-align: center;
+}
+.stock {
+  display: block;
+  margin-top: 4px;
+  color: #6b7280;
+}
+.stock.out {
+  color: #ef4444;
+}
+
 .row-total {
   font-weight: 700;
   text-align: right;

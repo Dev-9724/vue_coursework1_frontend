@@ -31,18 +31,23 @@
             ></path>
           </svg>
 
-          <span class="badge" v-if="state.cart.length">{{
-            state.cart.length
-          }}</span>
+          <span class="badge" v-if="state.cart.length">
+            {{ state.cart.length }}
+          </span>
         </button>
 
         <button class="primary" @click="$emit('checkout')">Checkout</button>
       </div>
-      
     </header>
 
-    <!-- lessons grid -->
-    <div class="grid">
+    <!-- lessons content -->
+    <div v-if="state.loadingLessons" class="muted">Loading lessons...</div>
+
+    <div v-else-if="state.lessonsError" class="error">
+      {{ state.lessonsError }}
+    </div>
+
+    <div v-else class="grid">
       <LessonCard
         v-for="ls in sortedLessons"
         :key="ls._id"
@@ -54,11 +59,18 @@
 </template>
 
 <script setup>
+import { onMounted } from "vue";
 import LessonCard from "../components/LessonCard.vue";
 import SortBar from "../components/SortBar.vue";
 import { useStore } from "../composables/useStore";
+
 const emit = defineEmits(["checkout"]);
-const { state, sortedLessons, setSort, addToCart } = useStore();
+
+const { state, sortedLessons, setSort, addToCart, loadLessons } = useStore();
+
+onMounted(() => {
+  loadLessons();
+});
 </script>
 
 <style scoped>
@@ -124,6 +136,14 @@ const { state, sortedLessons, setSort, addToCart } = useStore();
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
+}
+.muted {
+  color: #6b7280;
+  padding: 0.75rem 0;
+}
+.error {
+  color: #b91c1c;
+  padding: 0.75rem 0;
 }
 @media (max-width: 900px) {
   .grid {

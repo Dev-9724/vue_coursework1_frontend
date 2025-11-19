@@ -1,24 +1,16 @@
 import { reactive, computed } from 'vue'
 
+const API_BASE = 'http://localhost:3000' // later: your Render URL
+
 const state = reactive({
-    lessons: [
-        { _id: '1', subject: 'Art & Crafts', location: 'Golders Green', price: 10.0, spaces: 5, rating: 4, image: 'src/assets/art&craft image.jpg' },
-        { _id: '2', subject: 'Maths — Young Learners', location: 'Hendon', price: 12.5, spaces: 5, rating: 4, image: 'src/assets/Maths image.jpg' },
-        { _id: '3', subject: 'Coding Club', location: 'Colindale', price: 18.0, spaces: 5, rating: 5, image: 'src/assets/CodingClub image.webp' },
-        { _id: '4', subject: 'Science Lab Explorers', location: 'Finchley', price: 15.0, spaces: 5, rating: 5, image: 'src/assets/science lab image.jpg' },
-        { _id: '5', subject: 'Robotics Workshop', location: 'Camden', price: 22.0, spaces: 5, rating: 5, image: 'src/assets/robotics lab image.avif' },
-        { _id: '6', subject: 'Creative Writing', location: 'Barnet', price: 11.0, spaces: 5, rating: 4, image: 'src/assets/Content writing image.jpg' },
-        { _id: '7', subject: 'Music Band Basics', location: 'Harrow', price: 14.0, spaces: 5, rating: 4, image: 'src/assets/music band image.avif' },
-        { _id: '8', subject: 'Drama & Theatre', location: 'Kilburn', price: 13.5, spaces: 5, rating: 4, image: 'src/assets/Drama&theatre image.jpg' },
-        { _id: '9', subject: 'Chess Strategy', location: 'Wembley', price: 9.0, spaces: 5, rating: 5, image: 'https://design.canva.ai/syDhEDwo7e1fR6m' },
-        { _id: '10', subject: 'Football Skills', location: 'Ealing', price: 12.0, spaces: 5, rating: 3, image: 'src/assets/football-skillls.png' },
-    ],
+    lessons: [],          // filled from backend
     cart: [],
     sortKey: 'price',
     sortDir: 'asc',
-    search: ''
+    search: '',
+    loadingLessons: false,
+    lessonsError: null,
 })
-
 
 const sortedLessons = computed(() => {
     const arr = [...state.lessons]
@@ -35,7 +27,115 @@ const sortedLessons = computed(() => {
     return arr
 })
 
-const cartTotal = computed(() => state.cart.reduce((s, i) => s + Number(i.price || 0), 0))
+const cartTotal = computed(() =>
+    state.cart.reduce((s, i) => s + Number(i.price || 0), 0)
+)
+
+// ---- NEW: grouped cart (for checkout) ----
+const groupedCart = computed(() => {
+    const map = new Map()
+
+    for (const item of state.cart) {
+        if (!map.has(item._id)) {
+            map.set(item._id, {
+                _id: item._id,
+                subject: item.subject,
+                location: item.location,
+                price: item.price,
+                spaces: item.spaces, // current spaces left (from lesson)
+                qty: 0,
+            })
+        }
+        map.get(item._id).qty++
+    }
+
+    return Array.from(map.values())
+})
+
+// ---- fetch lessons from backend ----
+async function loadLessons() {
+    state.loadingLessons = true
+    state.lessonsError = null
+
+    try {
+        const res = await fetch(`${API_BASE}/lessons`)
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`)
+        }
+        const data = await res.json()
+        state.lessons = data
+    } catch (err) {
+        console.error('Failed to load lessons:', err)
+        state.lessonsError = 'Could not load lessons from server.'
+    } finally {
+        state.loadingLessons = false
+    }
+}
+
+// ---- NEW: place order (POST + PUT) ----
+async function placeOrder({ name, phone }) {
+    if (!name || !phone) {
+        throw new Error('Name and phone are required')
+    }
+
+    const items = groupedCart.value
+    if (!items.length) {
+        throw new Error('Cart is empty')
+    }
+
+    // build order payload
+    const lessonIDs = items.map(i => i._id)
+    const quantities = items.map(i => i.qty)
+    const total = items.reduce((sum, i) => sum + i.price * i.qty, 0)
+
+    const orderPayload = {
+        name,
+        phone,                 // for backend validation
+        phoneNumber: phone,    // matches your manual docs
+        lessonIDs,
+        quantities,
+        total,
+        createdAt: new Date().toISOString(),
+    }
+
+    // 1) POST /orders
+    const res = await fetch(`${API_BASE}/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload),
+    })
+
+    if (!res.ok) {
+        const errorBody = await res.json().catch(() => ({}))
+        console.error('Order error:', errorBody)
+        throw new Error('Failed to create order on server')
+    }
+
+    // 2) For each lesson in cart, update spaces via PUT /lessons/:id
+    for (const item of items) {
+        const lesson = state.lessons.find(l => l._id === item._id)
+        if (!lesson) continue
+
+        const newSpaces = Math.max(0, (lesson.spaces ?? 0) - item.qty)
+
+        const putRes = await fetch(`${API_BASE}/lessons/${item._id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ spaces: newSpaces }),
+        })
+
+        if (!putRes.ok) {
+            console.error('Failed to update spaces for lesson', item._id)
+            // we don't throw here so other items can still process
+        } else {
+            // update local state so UI reflects new spaces
+            lesson.spaces = newSpaces
+        }
+    }
+
+    // 3) Clear cart
+    state.cart = []
+}
 
 export function useStore() {
     function setSort({ sortKey, sortDir }) {
@@ -67,9 +167,12 @@ export function useStore() {
         state,
         sortedLessons,
         cartTotal,
+        groupedCart,     // <- NEW
+        loadLessons,
         setSort,
         addToCart,
         removeFromCart,
-        qtyInCart
+        qtyInCart,
+        placeOrder,      // <- NEW
     }
 }

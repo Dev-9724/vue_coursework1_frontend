@@ -114,7 +114,7 @@
           <button
             class="primary"
             :disabled="!isValid || !cartItems.length || loading"
-            @click="placeOrder"
+            @click="handlePlaceOrder"
           >
             {{ loading ? "Placing order..." : "Place order" }}
           </button>
@@ -137,34 +137,15 @@ const loading = ref(false);
 const error = ref("");
 const success = ref(false);
 
+const name = ref("");
+const phone = ref("");
+
 // flat cart (each item is one unit)
 const cartItems = computed(() => store.state.cart || []);
 
-// GROUPED VIEW for the UI (id -> qty)
-const groupedItems = computed(() => {
-  const map = new Map();
-  for (const i of cartItems.value) {
-    if (!map.has(i._id)) {
-      map.set(i._id, {
-        _id: i._id,
-        subject: i.subject,
-        location: i.location,
-        price: Number(i.price) || 0,
-        qty: 0,
-      });
-    }
-    map.get(i._id).qty += 1;
-  }
-  return Array.from(map.values()).map((g) => ({
-    ...g,
-    total: g.qty * g.price,
-  }));
-});
-
-// totals from the flat cart (already correct)
-const subtotal = computed(() =>
-  cartItems.value.reduce((sum, i) => sum + Number(i.price || 0), 0)
-);
+// use groupedCart + cartTotal from the store
+const groupedItems = store.groupedCart;
+const subtotal = store.cartTotal;
 
 // quick lesson lookup for remaining spaces (for + button disable and label)
 const lessonById = (id) => store.state.lessons.find((l) => l._id === id);
@@ -176,15 +157,14 @@ function increment(id) {
     store.addToCart(lesson); // pushes one more unit & decreases spaces
   }
 }
+
 function decrement(id) {
   store.removeFromCart(id); // removes one unit & restores one space
 }
+
 function removeLine(id, qty) {
   for (let i = 0; i < qty; i++) store.removeFromCart(id); // remove ALL and restore all spaces
 }
-
-const name = ref("");
-const phone = ref("");
 
 // validation
 const nameOk = computed(() =>
@@ -205,7 +185,8 @@ function asGBP(v) {
   }).format(v || 0);
 }
 
-async function placeOrder() {
+// call the store's placeOrder (POST + PUT + clear cart)
+async function handlePlaceOrder() {
   if (!isValid.value || !cartItems.value.length) return;
 
   loading.value = true;
@@ -213,14 +194,16 @@ async function placeOrder() {
   success.value = false;
 
   try {
-    // remove every item from flat cart (restores spaces for each)
-    const ids = cartItems.value.map((i) => i._id);
-    ids.forEach((id) => store.removeFromCart(id));
+    await store.placeOrder({
+      name: name.value,
+      phone: phone.value,
+    });
 
     success.value = true;
     name.value = "";
     phone.value = "";
   } catch (e) {
+    console.error(e);
     error.value = e?.message || "Something went wrong.";
   } finally {
     loading.value = false;

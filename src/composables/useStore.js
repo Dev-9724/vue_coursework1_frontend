@@ -1,6 +1,6 @@
 import { reactive, computed } from 'vue'
 
-const API_BASE = 'http://localhost:3000' // later: your Render URL
+const API_BASE = 'https://vue-coursework1-backend.onrender.com' // later: your Render URL
 
 const state = reactive({
     lessons: [],          // filled from backend

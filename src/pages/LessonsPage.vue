@@ -1,153 +1,151 @@
+<!-- src/pages/LessonsPage.vue -->
 <template>
   <section class="lessons-page">
-    <!-- header -->
+    <!-- PAGE HEADER -->
     <header class="page-head">
-      <h1>After-School Classes</h1>
+      <div class="page-head-main">
+        <h1>After-School Lessons</h1>
+        <p class="muted">
+          Browse, search and sort lessons, then add them to your basket.
+        </p>
+      </div>
 
-      <div class="head-actions">
-        <SortBar
-          :sortKey="state.sortKey"
-          :sortDir="state.sortDir"
-          @update:sort="setSort"
+      <!-- SEARCH + SORT CONTROLS -->
+      <div class="page-head-controls">
+        <!-- SEARCH BAR -->
+        <input
+          v-model="search"
+          type="search"
+          class="search-input"
+          placeholder="Search by subject or location…"
         />
 
-        <!-- cart button with badge -->
-        <button class="icon" @click="emit('checkout')" aria-label="Cart">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <circle cx="9" cy="21" r="1"></circle>
-            <circle cx="20" cy="21" r="1"></circle>
-            <path
-              d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
-            ></path>
-          </svg>
-
-          <span class="badge" v-if="state.cart.length">
-            {{ state.cart.length }}
-          </span>
-        </button>
-
-        <button class="primary" @click="$emit('checkout')">Checkout</button>
+        <!-- EXISTING SORT BAR (still using store.sortKey / sortDir) -->
+        <SortBar
+          :sort-key="state.sortKey"
+          :sort-dir="state.sortDir"
+          @change="setSort"
+        />
       </div>
     </header>
 
-    <!-- lessons content -->
-    <div v-if="state.loadingLessons" class="muted">Loading lessons...</div>
+    <!-- PAGE BODY -->
+    <main>
+      <!-- LOADING / ERROR STATES -->
+      <div v-if="state.loadingLessons" class="muted">Loading lessons…</div>
 
-    <div v-else-if="state.lessonsError" class="error">
-      {{ state.lessonsError }}
-    </div>
+      <div v-else-if="state.lessonsError" class="error">
+        {{ state.lessonsError }}
+      </div>
 
-    <div v-else class="grid">
-      <LessonCard
-        v-for="ls in sortedLessons"
-        :key="ls._id"
-        :lesson="ls"
-        @add="addToCart"
-      />
-    </div>
+      <!-- NO RESULTS FOR CURRENT SEARCH -->
+      <div
+        v-else-if="!filteredLessons.length && state.lessons.length"
+        class="muted"
+      >
+        No lessons match “{{ search }}”.
+      </div>
+
+      <!-- NO LESSONS AT ALL -->
+      <div
+        v-else-if="!filteredLessons.length && !state.lessons.length"
+        class="muted"
+      >
+        There are currently no lessons available.
+      </div>
+
+      <!-- LESSON GRID -->
+      <div v-else class="lessons-grid">
+        <LessonCard
+          v-for="lesson in filteredLessons"
+          :key="lesson._id"
+          :lesson="lesson"
+          :in-cart-qty="qtyInCart(lesson._id)"
+        />
+      </div>
+    </main>
   </section>
 </template>
 
 <script setup>
-import { onMounted } from "vue";
-import LessonCard from "../components/LessonCard.vue";
-import SortBar from "../components/SortBar.vue";
+import { ref, computed, onMounted } from "vue";
 import { useStore } from "../composables/useStore";
+import SortBar from "../components/SortBar.vue";
+import LessonCard from "../components/LessonCard.vue";
 
-const emit = defineEmits(["checkout"]);
+const { state, sortedLessons, loadLessons, setSort, qtyInCart } = useStore();
 
-const { state, sortedLessons, setSort, addToCart, loadLessons } = useStore();
+// local search text (does NOT change your store)
+const search = ref("");
 
+// filter over the already-sorted lessons
+const filteredLessons = computed(() => {
+  const term = search.value.trim().toLowerCase();
+  if (!term) return sortedLessons.value;
+
+  return sortedLessons.value.filter((lesson) => {
+    const subject = String(lesson.subject || "").toLowerCase();
+    const location = String(lesson.location || "").toLowerCase();
+    return subject.includes(term) || location.includes(term);
+  });
+});
+
+// load from backend on first visit
 onMounted(() => {
-  loadLessons();
+  if (!state.lessons.length && !state.loadingLessons) {
+    loadLessons();
+  }
 });
 </script>
 
 <style scoped>
 .lessons-page {
-  padding: 1.25rem 1.5rem;
-  max-width: 1150px;
+  max-width: 1100px;
   margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
 }
+
 .page-head {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
-.page-head h1 {
+
+.page-head-main h1 {
   margin: 0;
-  font-size: 44px;
-  line-height: 1.05;
-  font-weight: 800;
 }
-.head-actions {
+
+.page-head-controls {
   display: flex;
-  align-items: center;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
 }
-.icon {
-  position: relative;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  padding: 8px 10px;
-  border-radius: 12px;
-  cursor: pointer;
+
+.search-input {
+  min-width: 220px;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
 }
-.icon:hover {
-  background: #eef2ff;
-}
-.badge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background: #111;
-  color: #fff;
-  border-radius: 999px;
-  padding: 2px 7px;
-  font-size: 12px;
-}
-.primary {
-  border: none;
-  background: #4f46e5;
-  color: #fff;
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.primary:hover {
-  filter: brightness(0.95);
-}
-.grid {
+
+.lessons-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
 }
+
 .muted {
-  color: #6b7280;
-  padding: 0.75rem 0;
+  color: #666;
+  font-size: 0.9rem;
 }
+
 .error {
-  color: #b91c1c;
-  padding: 0.75rem 0;
-}
-@media (max-width: 900px) {
-  .grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  }
+  color: #b00020;
+  font-weight: 500;
 }
 </style>

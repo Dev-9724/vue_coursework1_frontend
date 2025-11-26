@@ -1,9 +1,9 @@
 import { reactive, computed } from 'vue'
 
-const API_BASE = 'https://vue-coursework1-backend.onrender.com' // later: your Render URL
+const API_BASE = 'https://vue-coursework1-backend.onrender.com'
 
 const state = reactive({
-    lessons: [],          // filled from backend
+    lessons: [],
     cart: [],
     sortKey: 'price',
     sortDir: 'asc',
@@ -27,9 +27,17 @@ const sortedLessons = computed(() => {
     return arr
 })
 
-const cartTotal = computed(() =>
-    state.cart.reduce((s, i) => s + Number(i.price || 0), 0)
-)
+// Filtered lessons (top-level) — depends on store.search + sortedLessons
+const filteredLessons = computed(() => {
+    const term = String(state.search || '').trim().toLowerCase()
+    if (!term) return sortedLessons.value
+
+    return sortedLessons.value.filter(lesson => {
+        const subject = String(lesson.subject || '').toLowerCase()
+        const location = String(lesson.location || '').toLowerCase()
+        return subject.includes(term) || location.includes(term)
+    })
+})
 
 // ---- NEW: grouped cart (for checkout) ----
 const groupedCart = computed(() => {
@@ -44,13 +52,22 @@ const groupedCart = computed(() => {
                 price: item.price,
                 spaces: item.spaces, // current spaces left (from lesson)
                 qty: 0,
+                total: 0,
             })
         }
-        map.get(item._id).qty++
+        const group = map.get(item._id)
+        group.qty++
+        group.total = Number(group.price || 0) * group.qty
     }
 
     return Array.from(map.values())
 })
+
+// cartTotal now derives from grouped totals (price * qty) — safer and clearer
+const cartTotal = computed(() => groupedCart.value.reduce((s, i) => s + Number(i.total || 0), 0))
+
+// ---- NEW: grouped cart (for checkout) ----
+// (groupedCart moved above cartTotal; original groupedCart logic updated)
 
 // ---- fetch lessons from backend ----
 async function loadLessons() {
@@ -137,6 +154,10 @@ async function placeOrder({ name, phone }) {
     state.cart = []
 }
 
+function setSearch(value) {
+    state.search = value
+}
+
 export function useStore() {
     function setSort({ sortKey, sortDir }) {
         state.sortKey = sortKey
@@ -166,13 +187,16 @@ export function useStore() {
     return {
         state,
         sortedLessons,
+        filteredLessons, 
         cartTotal,
-        groupedCart,     // <- NEW
+        groupedCart,
         loadLessons,
         setSort,
+        setSearch,       
         addToCart,
         removeFromCart,
         qtyInCart,
-        placeOrder,      // <- NEW
+        placeOrder,
     }
+
 }

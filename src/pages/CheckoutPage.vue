@@ -55,10 +55,7 @@
               </small>
             </div>
 
-            <!-- ✅ this is the important part -->
-            <div class="line-total">
-              {{ asGBP(lineTotal(g)) }}
-            </div>
+            <div class="row-total">{{ asGBP(g.total) }}</div>
 
             <!-- remove ALL units of this line -->
             <button class="link danger" @click="removeLine(g._id, g.qty)">
@@ -167,10 +164,6 @@ function decrement(id) {
 
 function removeLine(id, qty) {
   for (let i = 0; i < qty; i++) store.removeFromCart(id); // remove ALL and restore all spaces
-}
-
-function lineTotal(item) {
-  return item.price * item.qty;
 }
 
 // validation

@@ -44,20 +44,24 @@ watch(
 .sortbar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 1rem;
 }
 .label {
-  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-muted);
 }
 select {
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 8px 10px;
+  padding: 10px 10px;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
   background: #fff;
-}
-select:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px #c7d2fe;
+  font-size: 1rem;
+  cursor: pointer;
+  appearance: none; /* Hide default dropdown arrow for cleaner look */
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="gray" d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 30px; /* Make space for custom arrow */
 }
 </style>

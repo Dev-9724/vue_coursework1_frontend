@@ -50,7 +50,9 @@ watch(
 .label {
   font-size: 0.9rem;
   color: var(--text-muted);
+  font-weight: 500; /* Slightly reduced weight for the label text */
 }
+/* 2. Style the Dropdowns */
 select {
   padding: 10px 10px;
   border: 1px solid var(--card-border);
@@ -59,6 +61,7 @@ select {
   font-size: 1rem;
   cursor: pointer;
   appearance: none; /* Hide default dropdown arrow for cleaner look */
+  /* Add custom caret icon via SVG data URI */
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="gray" d="M7 10l5 5 5-5z"/></svg>');
   background-repeat: no-repeat;
   background-position: right 8px center;
